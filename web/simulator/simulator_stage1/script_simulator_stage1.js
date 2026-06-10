@@ -131,7 +131,7 @@ function renderRatingInputs() {
                             class="unstableCheckbox"
                             data-team="${match[0]}"
                         >
-                        ⚡
+                        不稳定
                     </label>
                 </div>
 
@@ -155,7 +155,7 @@ function renderRatingInputs() {
                             class="unstableCheckbox"
                             data-team="${match[1]}"
                         >
-                        ⚡
+                        不稳定
                     </label>
                 </div>
 

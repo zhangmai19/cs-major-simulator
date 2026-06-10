@@ -368,7 +368,7 @@ h1 {
 
 .ratingTeamBox {
     display: grid;
-    grid-template-columns: 1fr 50px auto;
+    grid-template-columns: 1fr 45px 52px;
     align-items: center;
     gap: 4px;
     min-width: 0;
@@ -384,21 +384,23 @@ h1 {
 
 /* =========================
    不稳定标记
-   ⚡ 勾选后比赛结果更随机
+   勾选后比赛结果更随机
 ========================= */
 
 .unstableLabel {
     cursor: pointer;
-    font-size: 16px;
-    text-align: center;
-    color: #555;
+    font-size: 12px;
+    color: #999;
     user-select: none;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 3px;
     transition: color 0.2s;
-    line-height: 1;
 }
 
 .unstableLabel:hover {
-    color: #aaa;
+    color: #ccc;
 }
 
 .unstableLabel:has(.unstableCheckbox:checked) {
@@ -406,7 +408,7 @@ h1 {
 }
 
 .unstableCheckbox {
-    display: none;
+    cursor: pointer;
 }
 
 .ratingVs {
@@ -415,8 +417,8 @@ h1 {
 }
 
 .ratingMatchRow .ratingInput {
-    width: 50px;
-    padding: 6px;
+    width: 42px;
+    padding: 5px;
     border-radius: 6px;
     border: none;
     text-align: center;
