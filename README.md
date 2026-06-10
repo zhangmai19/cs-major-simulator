@@ -1,238 +1,138 @@
 # CS Major Simulator
 
-一个基于 Monte Carlo Simulation 的 CS Major Pick'Em 分析工具。
+基于 Monte Carlo Simulation 的 CS2 Major Pick'Em 分析工具。
 
-## 项目简介
-
-CS Major Simulator 最初诞生于我对 Major Pick'Em 的一个简单想法：
-
-> 如果我能根据自己对队伍实力的判断来模拟整个瑞士轮，那么我是否能得到比纯凭感觉更合理的 Pick'Em 结果？
-
-随着项目不断迭代，它逐渐从一个简单的瑞士轮模拟器发展成了一个完整的 Major Swiss Stage 分析工具。
-
-目前项目已经支持：
-
-* 瑞士轮完整模拟
-* Monte Carlo 概率分析
-* Pick'Em 推荐
-* 保5最优推荐
-* Pick'Em 生存率计算
-* 当前赛事状态追踪
+> Forked from [Wenhuaren5/cs-major-simulator](https://github.com/Wenhuaren5/cs-major-simulator)
 
 ---
 
-## 当前版本
+## 快速开始
 
-### v3.3 — Pick'Em Survival Tracker
+```
+https://zhangmai19.github.io/cs-major-simulator/web/
+```
 
----
-
-## Stage 1 Simulator
-
-模拟整个 Major Stage 1 瑞士轮。
-
-功能包括：
-
-* 自定义 Stage 1 首轮对阵
-* 自定义队伍评分
-* 自动生成后续轮次
-* 支持 BO1 与 BO3 对局
-* Monte Carlo 多次随机模拟
-
-输出内容：
-
-* 3-0 概率
-* 晋级概率
-* 0-3 概率
+打开后选择对应 Stage，给每队打分（1-10），可选标记状态不稳的队伍，点击"开始模拟"。
 
 ---
 
-## Pick'Em Recommendation
+## 与上游原版的差异
 
-根据模拟结果自动生成 Pick'Em 推荐。
+### 1. 胜率模型：线性 → Logistic
 
-推荐内容：
+| | 原版 | 本 Fork |
+|---|---|---|
+| 公式 | `ratingA / (ratingA + ratingB)` | `1 / (1 + e^{-K × (ratingA - ratingB)})` |
+| 类型 | 线性比例 | Logistic / Sigmoid |
+| 差 1 分 | 56%（5 vs 4）不可控 | **73%** 可控 |
+| 差 2 分 | 60% | **88%** |
+| 差 3 分 | 64% | **95%** |
+| K 值 | — | `K = 1`（固定） |
 
-### Recommended 3-0
+原版的线性模型对分差不敏感——5 分打 4 分和 9 分打 1 分的差距完全一样。Logistic 模型更接近真实竞技：分差越大，胜率加速拉开。
 
-自动选择最适合作为 3-0 的队伍。
+### 2. 不稳定标记 ⚡ — 新增
 
-### Recommended Advance
+每支队伍可以勾选 **"不稳定"**，代表该队状态波动大、容易爆冷：
 
-自动选择最有可能晋级的队伍。
+| 情况 | K 值 | 差 3 分时的胜率 |
+|---|---|---|
+| 正常 | K = 1 | 95% |
+| 一方不稳定 | K = 0.5 | 82% |
+| 双方不稳定 | K = 0.25 | 68% |
 
-### Recommended 0-3
+勾选框在评分框旁边，灰色默认未勾，勾选后变金色。保存评分时会一并持久化到 localStorage。
 
-自动选择最有可能被淘汰的队伍。
+### 3. Stage 2 模拟器 — 新增
 
----
+原版只有 Stage 1。本 fork 新增完整的 **Stage 2 模拟器**，包含 Stage 2 的真实第一轮对阵。
 
-## Best 5-Correct Recommendation
+### 4. Stage 3 模拟器 — 新增
 
-这是 v3.2 引入的重要功能。
+完整的 **Stage 3（Playoffs）模拟器**，支持两种 Scenario：
+- **Scenario A**：BIG 晋级
+- **Scenario B**：B8 晋级
 
-与传统推荐不同：
+用户可以在下拉菜单中切换，评分独立保存。
 
-传统推荐追求：
+### 5. Pick'Em 推荐去重 — 修复
 
-> 哪些队伍最有可能晋级？
+原版 `generatePickemRecommendation` 中，3-0 推荐的队伍可能再次出现在晋级推荐里，导致同一队伍出现在两个位置。
 
-而 Best 5-Correct Recommendation 追求：
+本 fork 的 `getBestAdvancePicks` 新增 `excludedTeams` 参数，自动排除已被 3-0 选中的队伍。
 
-> 如何最大化获得至少 5 个正确 Pick'Em 的概率？
+### 6. Pick'Em 计分逻辑 — 修复
 
-系统会尝试不同 Pick'Em 组合，并计算：
+| 条件 | 原版 | 本 Fork |
+|---|---|---|
+| 3-0 预测 → 队伍 3-0 | ✓ | ✓ |
+| 3-0 预测 → 队伍晋级但非 3-0 | ✗ 仍计分 | ✓ **不计分** |
+| 晋级预测 → 队伍 3-0 | ✓ 计分 | ✓ **不计分**（要求 losses > 0） |
 
-* Pass Chance（通过概率）
-* 最优 3-0 组合
-* 最优晋级组合
-* 最优 0-3 组合
+### 7. Test Lab 使用 Logistic 模型 — 修复
 
-目标不是追求完美预测，而是提高作业通过率。
+原版 Test Lab 在继续模拟剩余比赛时使用固定 50/50 随机（忽略 rating），本 fork 改为使用 Logistic 模型根据用户评分计算胜率。
 
----
+### 8. C++ 命令行版 — 同步更新
 
-## Rating System
+C++ 版本的胜率模型也加入了不稳定标记支持，输入评分后可选择标记不稳定的队伍。
 
-用户可以为每支队伍设置自己的实力评分。
+### 9. 项目结构
 
-评分会影响：
-
-* 每场比赛胜率
-* Monte Carlo 模拟结果
-* 推荐系统结果
-
-支持：
-
-* 保存评分
-* 加载评分
-* 跨页面共享评分
-
-评分保存在浏览器本地。
-
----
-
-## Stage 1 Test Lab
-
-用于赛事进行中的分析。
-
-当比赛已经进行到一半时：
-
-传统模拟器无法反映当前真实情况。
-
-Test Lab 可以：
-
-* 输入当前比赛结果
-* 输入当前队伍状态
-* 从当前局面继续模拟剩余赛事
-
-帮助用户分析：
-
-* 哪些队伍最可能晋级
-* 哪些队伍最可能淘汰
-* 当前局势变化对 Pick'Em 的影响
-
----
-
-## Pick'Em Survival Tracker
-
-v3.3 新增功能。
-
-用户可以输入：
-
-### 3-0 Picks
-
-自己选择的 3-0 队伍。
-
-### Advance Picks
-
-自己选择的晋级队伍。
-
-### 0-3 Picks
-
-自己选择的 0-3 队伍。
-
-系统会结合：
-
-* 当前赛事状态
-* Monte Carlo 模拟
-* 用户评分
-
-计算：
-
-### Pass Chance
-
-达到至少 5 个正确 Pick'Em 的概率。
-
-如果没有保存评分：
-
-系统将自动使用默认 50/50 胜率继续模拟，并给予提示。
+```
+cs-major-simulator/
+├── index.html                          # 根目录跳转
+├── web/
+│   ├── index.html                      # 主页（所有 Stage 入口）
+│   ├── css/style.css
+│   ├── js/
+│   │   ├── simulation.js               # Swiss 引擎 + Team 类
+│   │   ├── montecarlo.js               # Monte Carlo + Logistic 胜率
+│   │   └── recommendation.js           # Pick'Em 推荐系统
+│   ├── simulator/
+│   │   ├── simulator_stage1/           # Stage 1 模拟器
+│   │   ├── simulator_stage2/           # Stage 2 模拟器（新增）
+│   │   └── simulator_stage3/           # Stage 3 模拟器（新增）
+│   └── test/
+│       ├── test_stage1/                # Stage 1 Test Lab
+│       ├── test_stage2/                # Stage 2 Test Lab（新增）
+│       └── test_stage3/                # Stage 3 Test Lab（新增）
+└── cpp/
+    └── main.cpp                        # C++ 命令行版
+```
 
 ---
 
-## 技术实现
+## 技术细节
 
-前端：
+### Logistic 胜率模型
 
-* HTML
-* CSS
-* JavaScript
+```
+P(A 赢) = 1 / (1 + e^{-K × (ratingA - ratingB)})
+```
 
-算法：
+其中 K 受不稳定标记影响：
+- 双方稳定：K = 1
+- 单方不稳定：K = 0.5
+- 双方不稳定：K = 0.25
 
-* Swiss Stage Pairing
-* Monte Carlo Simulation
-* Probability Analysis
+### Monte Carlo 模拟
 
-数据存储：
+默认 10,000 次模拟。每次模拟完整走过瑞士轮 5 轮，使用 Swiss pairing 规则（Buchholz 排序 + 避免重复对阵）。
 
-* LocalStorage
+### 保5最优推荐
 
-部署：
-
-* GitHub Pages
-
----
-
-## 未来计划
-
-### v3.4
-
-* Stage 2 Test Lab
-* Stage 2 Survival Tracker
-* 更完善的赛事状态管理
-
-### v3.5
-
-* Stage 3 支持
-* 自动生成完整 Pick'Em 页面
-
-### v4.0
-
-* Pick'Em Dashboard
-* 历史模拟记录
-* 用户配置导入导出
-* 更快的 Monte Carlo 引擎
-* 移动端界面优化
+遍历候选组合（3-0 前 5 选 2 × 晋级前 9 选 6 × 0-3 前 5 选 2），计算每套 Pick'Em 的保5概率，选出最优解。
 
 ---
 
-## 项目目标
+## 部署
 
-这个项目并不是为了预测未来。
-
-它更像是一个实验：
-
-> 如果把玩家对队伍的主观判断转化为概率模型，我们是否能做出更合理的 Pick'Em 决策？
-
-希望它能帮助更多玩家以数据分析的方式参与 Major Pick'Em，而不仅仅依赖直觉。
+GitHub Pages，从 `web/` 目录自动部署。
 
 ---
 
-作者：
+## 记录
 
-Wenhuaren5
-
-项目地址：
-
-https://github.com/Wenhuaren5/cs-major-simulator
+- 上游原版：[Wenhuaren5/cs-major-simulator](https://github.com/Wenhuaren5/cs-major-simulator)
+- 本 Fork：[zhangmai19/cs-major-simulator](https://github.com/zhangmai19/cs-major-simulator)
