@@ -90,6 +90,20 @@ scenarioSelect.addEventListener("change", () => {
         const ratings = JSON.parse(savedRatings);
         applyRatingsToInputs(ratings);
     }
+
+    // 载入不稳定标记
+    const savedUnstable = localStorage.getItem("stage3Unstable");
+    if (savedUnstable) {
+        const unstable = JSON.parse(savedUnstable);
+        document
+            .querySelectorAll(".unstableCheckbox")
+            .forEach(checkbox => {
+                const teamName = checkbox.dataset.team;
+                if (unstable[teamName] !== undefined) {
+                    checkbox.checked = unstable[teamName];
+                }
+            });
+    }
 });
 
 
@@ -174,6 +188,15 @@ function renderRatingInputs() {
                         value="5"
                         data-team="${match[0]}"
                     >
+
+                    <label class="unstableLabel" title="比赛结果更随机">
+                        <input
+                            type="checkbox"
+                            class="unstableCheckbox"
+                            data-team="${match[0]}"
+                        >
+                        ⚡
+                    </label>
                 </div>
 
                 <span class="ratingVs">VS</span>
@@ -189,6 +212,15 @@ function renderRatingInputs() {
                         value="5"
                         data-team="${match[1]}"
                     >
+
+                    <label class="unstableLabel" title="比赛结果更随机">
+                        <input
+                            type="checkbox"
+                            class="unstableCheckbox"
+                            data-team="${match[1]}"
+                        >
+                        ⚡
+                    </label>
                 </div>
 
             </div>
@@ -221,11 +253,12 @@ const resultArea =
 
 
 // =========================
-// 读取 rating 输入
+// 读取 rating 输入和不稳定标记
 // =========================
 function getRatingsFromInput() {
 
     let ratings = {};
+    let unstable = {};
 
     document
         .querySelectorAll(".ratingInput")
@@ -235,7 +268,15 @@ function getRatingsFromInput() {
                 Number(input.value);
         });
 
-    return ratings;
+    document
+        .querySelectorAll(".unstableCheckbox")
+        .forEach(checkbox => {
+
+            unstable[checkbox.dataset.team] =
+                checkbox.checked;
+        });
+
+    return { ratings, unstable };
 }
 
 
@@ -246,7 +287,7 @@ runSimulationButton.addEventListener(
     "click",
     () => {
 
-        const ratings =
+        const { ratings, unstable } =
             getRatingsFromInput();
 
         const matchups =
@@ -259,7 +300,8 @@ runSimulationButton.addEventListener(
             runMonteCarlo(
                 matchups,
                 ratings,
-                10000
+                10000,
+                unstable
             );
 
         const results =
@@ -417,11 +459,16 @@ function renderRecommendation(recommendation) {
 // =========================
 saveRatingsButton.addEventListener("click", () => {
 
-    const ratings = getRatingsFromInput();
+    const { ratings, unstable } = getRatingsFromInput();
 
     localStorage.setItem(
         "stage3Ratings",
         JSON.stringify(ratings)
+    );
+
+    localStorage.setItem(
+        "stage3Unstable",
+        JSON.stringify(unstable)
     );
 
     showStatus("✓ 评分已保存");
@@ -443,6 +490,28 @@ loadRatingsButton.addEventListener("click", () => {
 
     const ratings = JSON.parse(savedRatings);
     applyRatingsToInputs(ratings);
+
+    // 载入不稳定标记
+    const savedUnstable =
+        localStorage.getItem("stage3Unstable");
+
+    if (savedUnstable) {
+        const unstable =
+            JSON.parse(savedUnstable);
+
+        document
+            .querySelectorAll(".unstableCheckbox")
+            .forEach(checkbox => {
+
+                const teamName =
+                    checkbox.dataset.team;
+
+                if (unstable[teamName] !== undefined) {
+                    checkbox.checked =
+                        unstable[teamName];
+                }
+            });
+    }
 
     showStatus("✓ 评分已载入");
 });

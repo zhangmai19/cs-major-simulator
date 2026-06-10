@@ -13,13 +13,17 @@
 // =========================
 class Team {
 
-    constructor(name, seed, rating = 1) {
+    constructor(name, seed, rating = 1, unstable = false) {
 
         this.name = name;
 
         this.seed = seed;
 
         this.rating = rating;
+
+        // 不稳定标记：比赛结果更随机
+        // K 值会除以 2（单方）/ 4（双方）
+        this.unstable = unstable;
 
         this.wins = 0;
 
@@ -40,7 +44,7 @@ class Team {
 // 第一轮左边一列：Seed 1-8
 // 第一轮右边一列：Seed 9-16
 // =========================
-function createTeamsFromFirstRound(firstRoundMatches, ratings = {}) {
+function createTeamsFromFirstRound(firstRoundMatches, ratings = {}, unstableFlags = {}) {
 
     let seedOrder = [];
 
@@ -57,7 +61,8 @@ function createTeamsFromFirstRound(firstRoundMatches, ratings = {}) {
         return new Team(
             teamName,
             index + 1,
-            ratings[teamName] || 1
+            ratings[teamName] || 1,
+            unstableFlags[teamName] || false
         );
     });
 }

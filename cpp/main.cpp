@@ -46,6 +46,11 @@ struct Team {
     // 统计这支队伍以 0-3 出局的次数
     int zeroThreeCount = 0;
 
+    // 不稳定标记：比赛结果更随机
+    // 单方不稳定 → 胜率斜率减半
+    // 双方不稳定 → 胜率斜率再减半
+    bool unstable = false;
+
     // 记录以前打过哪些队
     // 用于避免重复对阵
     vector<int> opponents;
@@ -104,13 +109,29 @@ bool playedBefore(const Team& team, int opponentIndex) {
 }
 
 // =======================
-// 根据双方rating计算胜率
+// 根据双方rating和稳定性计算胜率
+//
+// 线性模型：每高1分，多5%胜率
+//
+// 不稳定标记：
+//   单方不稳定 → 效果减半（每高1分只多2.5%）
+//   双方不稳定 → 效果再减半（每高1分只多1.25%）
+//   相当于比赛结果更随机
 // =======================
-double winProb(double ratingA, double ratingB) {
+double winProb(double ratingA, double ratingB, bool unstableA, bool unstableB) {
 
-    // 初始50%
-    // 每高1分，多5%胜率
-    double p = 0.5 + (ratingA - ratingB) * 0.05;
+    // 基础斜率 0.05（每差1分 += 5%）
+    double slope = 0.05;
+
+    if (unstableA && unstableB) {
+        // 双方不稳定：比赛最随机
+        slope = 0.0125;
+    } else if (unstableA || unstableB) {
+        // 单方不稳定：中等随机
+        slope = 0.025;
+    }
+
+    double p = 0.5 + (ratingA - ratingB) * slope;
 
     // 最低5%
     if (p < 0.05) {
@@ -134,7 +155,9 @@ void playMatch(vector<Team>& teams, Match m, mt19937& rng) {
     // 计算A队胜率
     double p = winProb(
         teams[m.a].rating,
-        teams[m.b].rating
+        teams[m.b].rating,
+        teams[m.a].unstable,
+        teams[m.b].unstable
     );
 
     // 生成0-1随机数
@@ -314,6 +337,22 @@ int main() {
         cout << originalTeams[i].name << ": ";
 
         cin >> originalTeams[i].rating;
+    }
+
+    cout << endl;
+    cout << "请标记不稳定的队伍（y/n）：" << endl;
+    cout << "（不稳定队伍的比赛结果更随机）" << endl;
+
+    for (int i = 0; i < originalTeams.size(); i++) {
+
+        char unstableInput;
+
+        cout << originalTeams[i].name << " 不稳定? (y/n): ";
+
+        cin >> unstableInput;
+
+        originalTeams[i].unstable =
+            (unstableInput == 'y' || unstableInput == 'Y');
     }
 
     int simulations;

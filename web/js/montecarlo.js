@@ -9,10 +9,27 @@
 //   rating 差 2 分 ≈ 88%
 //   rating 差 3 分 ≈ 95%
 //   rating 相等     = 50%
+//
+// 不稳定标记：
+//   单方不稳定 → K 除以 2
+//   双方不稳定 → K 除以 4
+//   相当于比赛结果更随机、更不可预测
 // =========================
 function simulateMatch(teamA, teamB) {
 
-    const k = 1;
+    const baseK = 1;
+
+    // 根据不稳定标记调整 K
+    let k = baseK;
+
+    if (teamA.unstable && teamB.unstable) {
+        // 双方都不稳定：结果最随机
+        k = baseK / 4;
+    } else if (teamA.unstable || teamB.unstable) {
+        // 单方不稳定：中等随机
+        k = baseK / 2;
+    }
+
     const diff = teamA.rating - teamB.rating;
 
     const teamAWinRate =
@@ -35,12 +52,13 @@ function simulateMatch(teamA, teamB) {
 // =========================
 // 模拟一次完整 Stage 1
 // =========================
-function simulateOneTournament(firstRoundMatches, ratings) {
+function simulateOneTournament(firstRoundMatches, ratings, unstableFlags = {}) {
 
     let teams =
         createTeamsFromFirstRound(
             firstRoundMatches,
-            ratings
+            ratings,
+            unstableFlags
         );
 
     let currentRound = {
@@ -80,7 +98,7 @@ function simulateOneTournament(firstRoundMatches, ratings) {
 // =========================
 // Monte Carlo 多次模拟
 // =========================
-function runMonteCarlo(firstRoundMatches, ratings, simulationCount = 10000) {
+function runMonteCarlo(firstRoundMatches, ratings, simulationCount = 10000, unstableFlags = {}) {
 
     let stats = {};
 
@@ -110,7 +128,8 @@ function runMonteCarlo(firstRoundMatches, ratings, simulationCount = 10000) {
         const resultTeams =
             simulateOneTournament(
                 firstRoundMatches,
-                ratings
+                ratings,
+                unstableFlags
             );
 
         // =========================
