@@ -368,10 +368,11 @@ h1 {
 
 .ratingTeamBox {
     display: grid;
-    grid-template-columns: 1fr 45px 52px;
+    grid-template-columns: 1fr 45px auto;
     align-items: center;
     gap: 4px;
     min-width: 0;
+    overflow: visible;
 }
 
 .ratingTeamBox span {
