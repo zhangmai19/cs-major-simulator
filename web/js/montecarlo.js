@@ -4,10 +4,10 @@
 // 使用 Logistic / Sigmoid 模型：
 // P(A赢) = 1 / (1 + e^{-k * (ratingA - ratingB)})
 //
-// k = 1:
-//   rating 差 1 分 ≈ 73%
-//   rating 差 2 分 ≈ 88%
-//   rating 差 3 分 ≈ 95%
+// k = 0.7324:
+//   rating 差 1 分 ≈ 67.5%
+//   rating 差 2 分 ≈ 81.2%
+//   rating 差 3 分 ≈ 90.0%
 //   rating 相等     = 50%
 //
 // 不稳定标记：
@@ -17,7 +17,7 @@
 // =========================
 function simulateMatch(teamA, teamB) {
 
-    const baseK = 1;
+    const baseK = 0.7324;
 
     // 根据不稳定标记调整 K
     let k = baseK;

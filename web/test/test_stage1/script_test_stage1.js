@@ -723,7 +723,7 @@ function simulateRemainingTournament(currentTeams, ratings) {
     const simulatedTeams =
         cloneTeams(currentTeams);
 
-    const k = 1;
+    const k = 0.7324;
 
     for (let round = 1; round <= 5; round++) {
 
